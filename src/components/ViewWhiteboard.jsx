@@ -38,7 +38,7 @@ const ViewWhiteboard = () => {
   useEffect(() => {
     if (!canvas) return;
 
-    const socket = io("http://localhost:5000");
+    const socket = io("https://co-draw-backend.vercel.app");
     socketRef.current = socket;
 
     socket.emit("join-board", {boardId, data: null, role: 'viewer'});
@@ -95,7 +95,7 @@ const ViewWhiteboard = () => {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/whiteboards/save",
+        "https://co-draw-backend.vercel.app/api/whiteboards/save",
         { boardId: crypto.randomUUID(), data: whiteboardData, previewImage },
         { withCredentials: true }
       );
