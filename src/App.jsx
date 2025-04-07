@@ -6,7 +6,7 @@ import Register from './pages/Register'
 import Whiteboard from "./components/Whiteboard";
 import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
-import ViewWhiteboard from "./components/viewWhiteBoard";
+import ViewWhiteboard from './components/ViewWhiteboard'
 
 const App = () => {
     return (
