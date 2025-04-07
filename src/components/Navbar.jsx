@@ -9,7 +9,7 @@ const Navbar = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await axios.get("https://co-draw-backend.vercel.app/api/auth/me", {
+                const response = await axios.get("http://localhost:5000/api/auth/me", {
                     withCredentials: true,
                 });
                 // console.log(response.data.user)
@@ -23,7 +23,7 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         try {
-            await axios.post("https://co-draw-backend.vercel.app/api/auth/logout", {}, { withCredentials: true });
+            await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
             setUser(null);
             navigate("/login");
         } catch (error) {
