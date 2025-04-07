@@ -14,7 +14,7 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post("http://localhost:5000/api/auth/signup", formData, { withCredentials: true });
+            await axios.post("https://co-draw-backend.vercel.app/api/auth/signup", formData, { withCredentials: true });
             navigate("/login");
         } catch (error) {
             setError(error.response?.data?.message || "Registration failed");

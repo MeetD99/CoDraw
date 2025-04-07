@@ -8,7 +8,7 @@ const Home = () => {
     const [joinCode, setJoinCode] = useState("");
 
     useEffect(() => {
-        axios.get("http://localhost:5000/api/whiteboards", {
+        axios.get("https://co-draw-backend.vercel.app/api/whiteboards", {
             withCredentials: true // include the cookie
         })
         .then(res => {
