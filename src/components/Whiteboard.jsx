@@ -21,7 +21,7 @@ const Whiteboard = () => {
   // Load initial whiteboard data
   useEffect(() => {
     if (!location.state?.data) {
-      axios.get(`https://co-draw-backend.vercel.app/api/whiteboards/${boardId}`, { withCredentials: true })
+      axios.get(`https://co-draw-backend.onrender.com/api/whiteboards/${boardId}`, { withCredentials: true })
         .then(res => {
           if (res.data?.data) setInitialData(res.data.data);
         })
@@ -106,7 +106,7 @@ const Whiteboard = () => {
 
   useEffect(() => {
     if(!canvas) return;
-    const socket = io("https://co-draw-backend.vercel.app"); // adjust backend URL if needed
+    const socket = io("https://co-draw-backend.onrender.com"); // adjust backend URL if needed
     socketRef.current = socket;
   
     
@@ -139,7 +139,7 @@ const Whiteboard = () => {
 
     try {
       await axios.post(
-        "https://co-draw-backend.vercel.app/api/whiteboards/save",
+        "https://co-draw-backend.onrender.com/api/whiteboards/save",
         { boardId, data: whiteboardData, previewImage },
         { withCredentials: true }
       );
