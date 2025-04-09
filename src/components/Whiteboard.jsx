@@ -155,10 +155,10 @@ const Whiteboard = () => {
   useEffect(() => {
     if (canvas) {
       const handleKeyDown = (event) => {
-
+        const activeObjects = canvas.getActiveObjects();
         if ((event.ctrlKey || event.metaKey) && event.key === 'c' && activeObjects.length > 0) {
           const clonedObjects = [];
-          canvas.getActiveObjects().forEach((obj) => {
+          activeObjects.forEach((obj) => {
             obj.clone((cloned) => {
               clonedObjects.push(cloned);
               if (clonedObjects.length === activeObjects.length) {

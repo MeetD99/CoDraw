@@ -6,13 +6,16 @@ const Home = () => {
     const navigate = useNavigate();
     const [whiteboards, setWhiteboards] = useState([]);
     const [joinCode, setJoinCode] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        setLoading(true);
         axios.get("https://co-draw-backend.onrender.com/api/whiteboards", {
             withCredentials: true // include the cookie
         })
         .then(res => {
             setWhiteboards(res.data);
+            setLoading(false);
             console.log("Whiteboards fetched:", res.data);
         })
         .catch(err => {
@@ -54,7 +57,7 @@ const Home = () => {
             </div>
 
             
-            
+            {loading && <p>Loading....</p>}
             <div className="mt-5">
                 {whiteboards.length === 0 ? (
                     <p>No whiteboards yet</p>

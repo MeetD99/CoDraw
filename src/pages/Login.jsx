@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Loader } from 'lucide-react'
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -14,6 +16,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            setLoading(true);
             await axios.post("https://co-draw-backend.onrender.com/api/auth/login", formData, { withCredentials: true });
             navigate("/");
         } catch (error) {
@@ -44,7 +47,7 @@ const Login = () => {
                     required
                 />
                 {error && <p className="text-red-500">{error}</p>}
-                <button type="submit" className="bg-blue-500 text-white p-2 rounded">Login</button>
+                <button type="submit" className="bg-blue-500 text-white p-2 rounded cursor-pointer flex items-center gap-2">Login {loading && <Loader size={15}/>}</button>
             </form>
         </div>
     );
