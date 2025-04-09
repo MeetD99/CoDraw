@@ -59,7 +59,7 @@ const Home = () => {
             
             {loading && <p>Loading....</p>}
             <div className="mt-5">
-                {whiteboards.length === 0 ? (
+                {!loading && whiteboards.length === 0 ? (
                     <p>No whiteboards yet</p>
                 ) : (
                     <div className="flex gap-2 flex-wrap">

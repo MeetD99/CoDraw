@@ -161,12 +161,10 @@ const Whiteboard = () => {
           const clonedObjects = [];
           activeObjects.forEach((obj) => {
             obj.clone((cloned) => {
-              if (cloned && typeof cloned === 'object') {
                 clonedObjects.push(cloned);
                 if (clonedObjects.length === activeObjects.length) {
                   setCopiedObjects(clonedObjects);
                 }
-              }
             });
           });
         }
