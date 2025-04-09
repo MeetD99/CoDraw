@@ -15,6 +15,7 @@ const Whiteboard = () => {
   const [initialData, setInitialData] = useState(null);
   const navigate = useNavigate();
   const socketRef = useRef(null);
+  const location = useLocation();
   const isUpdatingFromSocketRef = useRef(false);
   const [copiedObjects, setCopiedObjects] = useState(null);
   
@@ -160,9 +161,11 @@ const Whiteboard = () => {
           const clonedObjects = [];
           activeObjects.forEach((obj) => {
             obj.clone((cloned) => {
-              clonedObjects.push(cloned);
-              if (clonedObjects.length === activeObjects.length) {
-                setCopiedObjects(clonedObjects);
+              if (cloned && typeof cloned === 'object') {
+                clonedObjects.push(cloned);
+                if (clonedObjects.length === activeObjects.length) {
+                  setCopiedObjects(clonedObjects);
+                }
               }
             });
           });
