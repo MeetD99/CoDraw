@@ -15,9 +15,7 @@ const Whiteboard = () => {
   const [initialData, setInitialData] = useState(null);
   const navigate = useNavigate();
   const socketRef = useRef(null);
-  const location = useLocation();
   const isUpdatingFromSocketRef = useRef(false);
-  const [copiedObjects, setCopiedObjects] = useState(null);
   
 
   // Load initial whiteboard data
@@ -156,34 +154,6 @@ const Whiteboard = () => {
   useEffect(() => {
     if (canvas) {
       const handleKeyDown = (event) => {
-        const activeObjects = canvas.getActiveObjects();
-        if ((event.ctrlKey || event.metaKey) && event.key === 'c' && activeObjects.length > 0) {
-          const clonedObjects = [];
-          activeObjects.forEach((obj) => {
-            obj.clone((cloned) => {
-                clonedObjects.push(cloned);
-                if (clonedObjects.length === activeObjects.length) {
-                  setCopiedObjects(clonedObjects);
-                }
-            });
-          });
-        }
-
-        if ((event.ctrlKey || event.metaKey) && event.key === 'v' && copiedObjects?.length > 0) {
-          // Paste
-          copiedObjects.forEach((cloned) => {
-            cloned.clone((newObj) => {
-              newObj.set({
-                left: newObj.left + 20,
-                top: newObj.top + 20,
-                evented: true,
-              });
-              canvas.add(newObj);
-            });
-          });
-          canvas.requestRenderAll();
-        }
-
         if (event.key == "Delete" || event.keyCode == 46 && canvas.getActiveObjects().length > 0) {
           canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
           canvas.discardActiveObject();
@@ -217,8 +187,6 @@ const Whiteboard = () => {
       canvas.add(rect);
     }
   };
-
-  
 
   const addTextBox = () => {
     if (canvas) {
