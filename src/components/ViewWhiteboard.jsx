@@ -2,20 +2,23 @@ import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Canvas } from "fabric";
 import io from "socket.io-client";
-import { Download, Save } from "lucide-react";
+import { Download, Group, Save } from "lucide-react";
 import axios from "axios";
+import GroupVoiceChat from "./GroupVoiceChat";
 
 const ViewWhiteboard = () => {
   const { boardId } = useParams();
   const canvasRef = useRef(null);
   const [canvas, setCanvas] = useState(null);
+  const [fullId, setFullId] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
     const initCanvas = new Canvas(canvasRef.current, {
-      width: 1000,
-      height: 600,
+      width: window.innerWidth,
+      height: window.innerHeight,
       selection: false,
+      enableRetinaScaling: true
     });
     initCanvas.backgroundColor = "#fff";
 
@@ -43,9 +46,11 @@ const ViewWhiteboard = () => {
 
     socket.emit("join-board", {boardId, data: null, role: 'viewer'});
 
-    const handleInitialRender = ({data}) => {
-      console.log("Recieved Initial Data")
-      
+    const handleInitialRender = ({data, boardId}) => {
+      // console.log(data);
+      // console.log(data);
+      // console.log(boardId)
+      setFullId(boardId);
       canvas.loadFromJSON(data, () => {
           canvas.renderAll();
           canvas.calcOffset();
@@ -107,16 +112,18 @@ const ViewWhiteboard = () => {
   };
 
   return (
-    <div className="flex justify-center py-5 bg-gray-100 gap-5">
+    <div className="relative flex overflow-hidden min-h-screen">
       <canvas ref={canvasRef} />
-      <div className="toolbar flex flex-col bg-white h-fit p-5 gap-5">
+      <div className="toolbar absolute top-[2%] z-[20] shadow-lg left-1/2 -translate-x-1/2 bg-gray-100 rounded-[10px] flex gap-5 px-3 py-3 justify-center  items-center">
         <button onClick={saveWhiteboard} className='cursor-pointer bg-gray-100 hover:bg-blue-100 flex items-center gap-2 p-[10px] font-mono rounded-[10px] text-sm' title='Save Whiteboard'>
           <Save size={20} /> Save Whiteboard
           </button>
         <button onClick={exportCanvasAsImage} className='cursor-pointer bg-gray-100 hover:bg-blue-100 flex items-center gap-2 p-[10px] font-mono rounded-[10px] text-sm'>
           <Download size={20} /> Export as PNG
         </button>
+        {fullId && <GroupVoiceChat boardId={fullId}/>}
       </div>
+      
     </div>
   );
 };

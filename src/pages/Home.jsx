@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Trash, Trash2 } from "lucide-react";
 
 const Home = () => {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ const Home = () => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        
         setLoading(true);
         axios.get("https://co-draw-backend.onrender.com/api/whiteboards", {
             withCredentials: true // include the cookie
@@ -35,25 +37,25 @@ const Home = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col gap-4 p-5">
+        <div className="min-h-screen flex flex-col gap-4 p-5 bg-white">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl">Your Whiteboards</h1>
+                <h1 className="text-2xl uppercase font-mono font-bold">Your Whiteboards</h1>
                 <div className="flex gap-2">
                 <input
                     type="text"
-                    placeholder="Enter join code"
+                    placeholder="Enter Join Code"
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
-                    className="border border-gray-400 rounded px-3 py-2 w-full max-w-sm"
+                    className="border border-black rounded px-3 py-2 w-full max-w-sm"
                 />
                 <button
                     onClick={handleJoinWhiteboard}
-                    className="bg-green-600 text-white px-4 py-2 rounded"
+                    className="bg-black cursor-pointer text-nowrap text-white px-4 py-2 rounded"
                 >
-                    Join
+                    Join a Whiteboard!
                 </button>
             </div>
-                <button onClick={createWhiteboard} className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">Create Whiteboard</button>
+                <button onClick={createWhiteboard} className="bg-black text-white px-4 py-2 rounded cursor-pointer">Create Whiteboard</button>
             </div>
 
             
@@ -62,11 +64,11 @@ const Home = () => {
                 {!loading && whiteboards.length === 0 ? (
                     <p>No whiteboards yet</p>
                 ) : (
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-3 flex-wrap">
                         {whiteboards.map(board => (
-                            <div key={board._id} className="p-2 cursor-pointer bg-gray-400" onClick={() => navigate(`/board/${board._id}`, { state: { data: board.data } })}>
+                            <div key={board._id} className="p-3 group cursor-pointer bg-black hover:bg-gray-800 rounded-md flex flex-col gap-2 relative" onClick={() => navigate(`/board/${board._id}`, { state: { data: board.data } })}>
                                 <img src={board.previewImage} alt="" width={300}/>
-                                <p>Whiteboard {board._id.slice(-6)} (Created on {new Date(board.createdAt).toLocaleDateString()})</p>
+                                <p className="font-mono text-white">Board {board._id.slice(-6)} (Created on {new Date(board.createdAt).toLocaleDateString()})</p>
                             </div>
                         ))}
                     </div>

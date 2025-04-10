@@ -12,10 +12,10 @@ const Navbar = () => {
                 const response = await axios.get("https://co-draw-backend.onrender.com/api/auth/me", {
                     withCredentials: true,
                 });
-                // console.log(response.data.user)
                 setUser(response.data.user);
             } catch (error) {
                 setUser(null);
+                navigate('/login')
             }
         };
         fetchUser();
@@ -32,20 +32,20 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="flex items-center justify-between p-3 bg-blue-500 text-white">
-            <Link to="/"><h2 className="text-[2vw] cursor-pointer">Collaborative Whiteboard</h2></Link>
+        <nav className="flex items-center p-3 justify-between bg-gray-200 border-b-2 border-gray-600">
+            <Link to="/"><img src="/logo.png" alt=""  width={150}/></Link>
             <div>
                 {user ? (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 text-xl font-mono">
                         <span>Welcome, {user.name}!</span>
-                        <button onClick={handleLogout} className="bg-red-500 px-3 py-1 rounded cursor-pointer">
+                        <button onClick={handleLogout} className="bg-[#8f00ff] text-white px-3 py-1 rounded cursor-pointer">
                             Logout
                         </button>
                     </div>
                 ) : (
                     <div className="flex gap-2">
-                        <Link to="/login" className="bg-green-500 px-3 py-1 rounded">Login</Link>
-                        <Link to="/register" className="bg-yellow-500 px-3 py-1 rounded">Sign Up</Link>
+                        <Link to="/login" className="bg-[#8f00ff] text-white px-3 py-1 rounded">Login</Link>
+                        <Link to="/register" className="bg-[#8f00ff] text-white px-3 py-1 rounded">Sign Up</Link>
                     </div>
                 )}
             </div>

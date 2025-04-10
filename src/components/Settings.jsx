@@ -185,11 +185,11 @@ const Settings = ({ canvas }) => {
 
     return (
         <>
-        {selectedObject && (<div className="settings bg-white rounded-[10px] p-5 absolute top-1/2 left-3  flex flex-col gap-5 -translate-y-1/2">
+        {selectedObject && (<div className="settings bg-gray-100 rounded-[10px] z-[20] p-5 absolute top-1/3 left-[2%] shadow-lg flex flex-col gap-5 -translate-y-1/3">
             {selectedObject.type === "rect" && (
                 <div className="max-w-[200px]">
                     <div className="flex flex-col gap-2">
-                        <label className="text-[#979797] text-sm">Opacity:</label>
+                        <label className="text-black text-sm">Opacity:</label>
                         <div className="flex gap-2 items-center">
                             <input
                                 type="range"
@@ -205,18 +205,18 @@ const Settings = ({ canvas }) => {
                         
                     </div>
                     
-                        <label className="text-[#979797] text-sm">Width:</label>
+                        <label className="text-black text-sm">Width:</label>
                         <input type="text" value={width} onChange={handleWidthChange} className="border-1 border-gray-300 pl-2"/>
-                        <label className="text-[#979797] text-sm">Height:</label>
+                        <label className="text-black text-sm">Height:</label>
                         <input type="text" value={height} onChange={handleHeightChange} className="border-1 border-gray-300 pl-2"/>
-                        <label className="text-[#979797] text-sm">Color:</label>
+                        <label className="text-black text-sm">Color:</label>
                         <input type="color" value={color} onChange={handleColorChange} className="block"/>
                 </div>
             )}
             { selectedObject.type === "circle" && (
                 <div className="max-w-[200px]">
                     <div className="flex flex-col gap-2">
-                        <label className="text-[#979797] text-sm">Opacity:</label>
+                        <label className="text-black text-sm">Opacity:</label>
                         <div className="flex gap-2 items-center">
                         <input
                             type="range"
@@ -229,16 +229,16 @@ const Settings = ({ canvas }) => {
                         <span>{opacity}%</span>
                         </div>
                     </div>
-                        <label className="text-[#979797] text-sm">Diameter:</label>
+                        <label className="text-black text-sm">Diameter:</label>
                         <input type="text" value={diameter} onChange={handleDiameterChange} className="border-1 border-gray-300 pl-2"/>
-                        <label className="text-[#979797] text-sm">Color:</label>
+                        <label className="text-black text-sm">Color:</label>
                         <input type="color" value={color} onChange={handleColorChange} className="block"/>
                 </div>
             )}
             { selectedObject.type === "path" && (
                 <div className="max-w-[200px]">
                     <div className="flex flex-col gap-2">
-                        <label className="text-[#979797] text-sm">Opacity:</label>
+                        <label className="text-black text-sm">Opacity:</label>
                         <div className="flex gap-2 items-center">
                         <input
                             type="range"
@@ -251,16 +251,16 @@ const Settings = ({ canvas }) => {
                         <span>{opacity}%</span>
                         </div>
                     </div>
-                        <label className="text-[#979797] text-sm">Color:</label>
+                        <label className="text-black text-sm">Color:</label>
                         <input type="color" value={color} onChange={handleStrokeColor} className="block"/>
-                        <label className="text-[#979797] text-sm">Stroke Width:</label>
+                        <label className="text-black text-sm">Stroke Width:</label>
                         <input type="text" value={strokeWidth} onChange={handleStrokeWidthChange} className="border-1 border-gray-300 pl-2"/>
                 </div>
             )}
             { selectedObject.type === "textbox" && (
                 <div className="max-w-[200px]">
                     <div className="flex flex-col gap-2">
-                        <label className="text-[#979797] text-sm">Opacity:</label>
+                        <label className="text-black text-sm">Opacity:</label>
                         <div className="flex gap-2 items-center">
                         <input
                             type="range"
@@ -273,15 +273,15 @@ const Settings = ({ canvas }) => {
                         <span>{opacity}%</span>
                         </div>
                     </div>
-                        <label className="text-[#979797] text-sm">Font:</label>
+                        <label className="text-black text-sm">Font:</label>
                         <select value={font} onChange={handleFontChange} className="border-1 border-gray-300 block">
                             {fontList.map((f) => (
                                 <option key={f} value={f}>{f}</option>
                             ))}
                         </select>
-                        <label className="text-[#979797] text-sm">Font Size:</label>
+                        <label className="text-black text-sm">Font Size:</label>
                         <input type="number" value={fontSize} onChange={handleFontSizeChange} className="border-1 border-gray-300 pl-2"/>
-                        <label className="text-[#979797] text-sm">Text Color:</label> 
+                        <label className="text-black text-sm">Text Color:</label> 
                         <input type="color" value={textColor} onChange={handleTextColorChange} className="block"/>
                 </div>
             )}

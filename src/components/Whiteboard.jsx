@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, PencilBrush, Textbox, Rect, Circle as Cir } from 'fabric';
-import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download } from 'lucide-react';
+import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download, Copy } from 'lucide-react';
 import Settings from './Settings';
 import axios from "axios";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
+import GroupVoiceChat from './GroupVoiceChat';
 
 const Whiteboard = () => {
   const { boardId } = useParams();
@@ -26,10 +27,25 @@ const Whiteboard = () => {
           if (res.data?.data) setInitialData(res.data.data);
         })
         .catch(err => {
-          if (err.response && (err.response.status === 403 || err.response.status === 404)) {
+          if (err.response && (err.response.status === 403)) {
             alert('Access Denied. Redirecting to Home...');
             navigate('/');
-          } else {
+          }else if(err.response && err.response.status === 404){
+            console.warn('Whiteboard not found. Creating new one...');
+            if (canvas) {
+              const whiteboardData = JSON.stringify(canvas.toJSON());
+              const previewImage = canvas.toDataURL('image/png');
+
+              axios.post(
+                "https://co-draw-backend.onrender.com/api/whiteboards/save",
+                { boardId, data: whiteboardData, previewImage },
+                { withCredentials: true }
+              )
+              .then(() => console.log("New whiteboard created and saved."))
+              .catch(err => console.error("Failed to create new whiteboard on 404:", err));
+            }
+          } 
+          else {
             console.error('Error fetching whiteboard:', err);
           }
           
@@ -53,8 +69,9 @@ const Whiteboard = () => {
   useEffect(() => {
     if (canvasRef.current) {
       const initCanvas = new Canvas(canvasRef.current, {
-        width: 1000,
-        height: 600,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        enableRetinaScaling: true
       });
 
       initCanvas.backgroundColor = '#fff';
@@ -108,9 +125,6 @@ const Whiteboard = () => {
     if(!canvas) return;
     const socket = io("https://co-draw-backend.onrender.com"); // adjust backend URL if needed
     socketRef.current = socket;
-  
-    
-    
   
     const handleCanvasUpdate = ({ boardId: incomingId, data }) => {
       if (incomingId === boardId && canvas) {
@@ -259,13 +273,13 @@ const Whiteboard = () => {
   };
 
   return (
-    <div className="flex flex-col gap-5 items-center bg-gray-400 py-5">
-      <div className="toolbar bg-white rounded-[10px] flex gap-5 px-3 py-3 justify-center w-fit items-center">
-        <button onClick={disableFreeDraw} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='Move'><Move size={20} /></button>
-        <button onClick={addRectangle} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='Square'><Square size={20} /></button>
-        <button onClick={addCircle} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='Circle'><Circle size={20} /></button>
-        <button onClick={addTextBox} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='TextBox'><Type size={20} /></button>
-        <button onClick={enableFreeDraw} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='Free Draw'><Pencil size={20} /></button>
+    <div className="relative overflow-hidden">
+      <div className="toolbar absolute top-[2%] z-[20] shadow-lg left-1/2 -translate-x-1/2 bg-gray-100 rounded-[10px] flex gap-5 px-3 py-3 justify-center  items-center">
+        <button onClick={disableFreeDraw} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Move'><Move size={20} /></button>
+        <button onClick={addRectangle} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Square'><Square size={20} /></button>
+        <button onClick={addCircle} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Circle'><Circle size={20} /></button>
+        <button onClick={addTextBox} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='TextBox'><Type size={20} /></button>
+        <button onClick={enableFreeDraw} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Free Draw'><Pencil size={20} /></button>
 
         {freeDrawingEnabled && (
           <div className='flex items-center gap-2 bg-gray-100 px-[10px] py-[6px] font-mono rounded-[10px] text-sm'>
@@ -277,22 +291,42 @@ const Whiteboard = () => {
           </div>
         )}
 
-        <button onClick={clearCanvas} className='cursor-pointer bg-gray-100 hover:bg-blue-100 flex items-center gap-2 p-[10px] font-mono rounded-[10px] text-sm'>
+        <button onClick={clearCanvas} className='cursor-pointer bg-gray-100 hover:bg-[#8f00ff]/80 hover:text-white flex items-center gap-2 p-[10px] text-nowrap font-mono rounded-[10px] text-sm'>
           <Trash2 size={15} /> clear canvas
         </button>
 
         <div className='h-[40px] w-[2px] bg-gray-200 block'></div>
 
-        <button onClick={saveWhiteboard} className='cursor-pointer hover:bg-blue-200 p-1 rounded-[5px]' title='Save Whiteboard'><Save size={20} /></button>
-        <button onClick={exportCanvasAsImage} className='cursor-pointer bg-gray-100 hover:bg-blue-100 flex items-center gap-2 p-[10px] font-mono rounded-[10px] text-sm'>
+        <button onClick={saveWhiteboard} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Save Whiteboard'><Save size={20} /></button>
+        <button onClick={exportCanvasAsImage} className='cursor-pointer bg-white hover:bg-[#8f00ff]/80 hover:text-white flex items-center gap-2 p-[10px] font-mono text-nowrap rounded-[10px] text-sm'>
           <Download size={20} /> Export as PNG
         </button>
+        <div className='bg-white  flex items-center font-mono gap-2 rounded-[10px] py-[5px] px-[8px]'>
+          <h1 className='text-nowrap'>Join Code:</h1> 
+          <div 
+            className='cursor-pointer w-full bg-gray-100 hover:bg-[#8f00ff]/80 hover:text-white flex items-center gap-2 p-[5px] font-mono rounded-[5px] text-sm' 
+            onClick={() => {
+              const joinCode = boardId.slice(-6);
+              navigator.clipboard.writeText(joinCode)
+                .then(() => {
+                  alert('Copied to Clipboard');
+                })
+                .catch(err => {
+                  console.error('Failed to copy:', err);
+                });
+            }}
+          >
+            {boardId.slice(-6)} <Copy size={15}/>
+          </div>
+        </div>
+        <GroupVoiceChat boardId={boardId}/>
       </div>
 
       <Settings canvas={canvas} />
       <div className='flex'>
         <canvas id="canvas" ref={canvasRef}></canvas>
       </div>
+      
     </div>
   );
 };
