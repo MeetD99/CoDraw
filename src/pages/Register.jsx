@@ -18,7 +18,7 @@ const Register = () => {
         try {
             setLoading(true);
             await axios.post("https://co-draw-backend.onrender.com/api/auth/signup",  formData, { withCredentials: true });
-            navigate("/login");
+            navigate("/");
         } catch (error) {
             setError(error.response?.data?.message || "Registration failed");
         }
