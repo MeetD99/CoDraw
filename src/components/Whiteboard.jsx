@@ -26,7 +26,26 @@ const Whiteboard = () => {
     operation: null,
     documentSize: 0
   });
-  
+  const [cloudMetrics, setCloudMetrics] = useState({
+    region: '',
+    saveCount: 0,
+    lastSave: null,
+    dataSize: '0 KB',
+    backupStatus: '',
+    processingNode: 0,
+    latency: '0ms',
+    throughput: '0 KB/s',
+    cpuUtilization: '0%',
+    memoryUsage: '0%',
+    activeConnections: 0,
+    replicationStatus: '',
+    infrastructure: {
+      processingNodes: 0,
+      loadBalancerStatus: '',
+      replicationFactor: 0
+    }
+  });
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
 
   // Load initial whiteboard data
   useEffect(() => {
@@ -345,6 +364,40 @@ const Whiteboard = () => {
     };
   }, [canvas, autoSave]);
 
+  const handleAutoSave = async () => {
+    if (!boardId || !user) return;
+
+    try {
+      setAutoSaveStatus('saving');
+      const response = await fetch(`${API_URL}/whiteboard/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          boardId,
+          data: canvasData,
+          previewImage: canvasRef.current.toDataURL('image/jpeg', 0.5)
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCloudMetrics(data.cloudMetrics);
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } else {
+        setAutoSaveStatus('error');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+    }
+  };
+
   return (
     <div className="relative overflow-hidden">
       <div className="toolbar absolute top-[2%] z-[20] shadow-lg left-1/2 -translate-x-1/2 bg-gray-100 rounded-[10px] flex gap-5 px-3 py-3 justify-center items-center">
@@ -429,6 +482,262 @@ const Whiteboard = () => {
         <canvas id="canvas" ref={canvasRef}></canvas>
       </div>
       
+      <div className="cloud-status-container">
+        <div className="cloud-status-header">
+          <div className="status-indicator">
+            <div className={`status-dot ${autoSaveStatus}`} />
+            <span className="status-text">
+              {autoSaveStatus === 'saving' ? 'Processing in Cloud...' : 
+               autoSaveStatus === 'saved' ? 'Cloud Sync Complete' : 
+               autoSaveStatus === 'error' ? 'Cloud Error' : 'Cloud Connected'}
+            </span>
+          </div>
+          <div className="region-info">
+            <span className="region-label">Cloud Region:</span>
+            <span className="region-value">{cloudMetrics.region}</span>
+          </div>
+        </div>
+
+        <div className="cloud-metrics-grid">
+          <div className="metric-section">
+            <h3 className="section-title">Performance</h3>
+            <div className="metric-item">
+              <span className="metric-label">Processing Node:</span>
+              <span className="metric-value">Node {cloudMetrics.processingNode}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Latency:</span>
+              <span className="metric-value">{cloudMetrics.latency}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Throughput:</span>
+              <span className="metric-value">{cloudMetrics.throughput}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">CPU Usage:</span>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: cloudMetrics.cpuUtilization }}
+                />
+                <span className="progress-text">{cloudMetrics.cpuUtilization}</span>
+              </div>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Memory Usage:</span>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: cloudMetrics.memoryUsage }}
+                />
+                <span className="progress-text">{cloudMetrics.memoryUsage}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="metric-section">
+            <h3 className="section-title">Infrastructure</h3>
+            <div className="metric-item">
+              <span className="metric-label">Active Nodes:</span>
+              <span className="metric-value">{cloudMetrics.infrastructure.processingNodes}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Load Balancer:</span>
+              <span className={`metric-value ${cloudMetrics.infrastructure.loadBalancerStatus.toLowerCase()}`}>
+                {cloudMetrics.infrastructure.loadBalancerStatus}
+              </span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Replication:</span>
+              <span className="metric-value">x{cloudMetrics.infrastructure.replicationFactor}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Active Connections:</span>
+              <span className="metric-value">{cloudMetrics.activeConnections}</span>
+            </div>
+          </div>
+
+          <div className="metric-section">
+            <h3 className="section-title">Data</h3>
+            <div className="metric-item">
+              <span className="metric-label">Total Saves:</span>
+              <span className="metric-value">{cloudMetrics.saveCount}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Data Size:</span>
+              <span className="metric-value">{cloudMetrics.dataSize}</span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Last Save:</span>
+              <span className="metric-value">
+                {cloudMetrics.lastSave ? new Date(cloudMetrics.lastSave).toLocaleTimeString() : 'Never'}
+              </span>
+            </div>
+            <div className="metric-item">
+              <span className="metric-label">Backup Status:</span>
+              <span className={`metric-value ${cloudMetrics.backupStatus.toLowerCase()}`}>
+                {cloudMetrics.backupStatus}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .cloud-status-container {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          max-width: 400px;
+          font-family: 'Inter', sans-serif;
+        }
+
+        .cloud-status-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .status-indicator {
+          display: flex;
+          align-items: center;
+        }
+
+        .status-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          margin-right: 8px;
+        }
+
+        .status-dot.idle {
+          background-color: #4CAF50;
+          box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+
+        .status-dot.saving {
+          background-color: #FFC107;
+          animation: pulse 1s infinite;
+        }
+
+        .status-dot.saved {
+          background-color: #4CAF50;
+          animation: pulse 1s;
+        }
+
+        .status-dot.error {
+          background-color: #F44336;
+          box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+        }
+
+        .status-text {
+          font-size: 14px;
+          font-weight: 500;
+          color: #333;
+        }
+
+        .region-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .region-label {
+          font-size: 12px;
+          color: #666;
+        }
+
+        .region-value {
+          font-size: 12px;
+          font-weight: 500;
+          color: #333;
+        }
+
+        .cloud-metrics-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .metric-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .section-title {
+          font-size: 12px;
+          font-weight: 600;
+          color: #333;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .metric-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .metric-label {
+          font-size: 11px;
+          color: #666;
+        }
+
+        .metric-value {
+          font-size: 12px;
+          font-weight: 500;
+          color: #333;
+        }
+
+        .metric-value.active {
+          color: #4CAF50;
+        }
+
+        .metric-value.inactive {
+          color: #F44336;
+        }
+
+        .progress-bar {
+          width: 100%;
+          height: 6px;
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 3px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #4CAF50, #8BC34A);
+          transition: width 0.3s ease;
+        }
+
+        .progress-text {
+          position: absolute;
+          right: 4px;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 10px;
+          color: #333;
+        }
+
+        @keyframes pulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };
