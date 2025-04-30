@@ -99,11 +99,22 @@ const ViewWhiteboard = () => {
     const previewImage = canvas.toDataURL('image/png');
 
     try {
-      await axios.post(
-        "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
-        { boardId: crypto.randomUUID(), data: whiteboardData, previewImage },
+      // 1. Upload image preview to Cloudinary via backend
+      const uploadResponse = await axios.post(
+        "https://codraw-backend-hd97.onrender.com/api/whiteboards/upload-preview",
+        { image: previewImage }, // send base64 string directly
         { withCredentials: true }
       );
+  
+      const cloudinaryUrl = uploadResponse.data.url;
+  
+      // 2. Save the whiteboard with the image URL
+      await axios.post(
+        "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
+        { boardId, data: whiteboardData, previewImage: cloudinaryUrl },
+        { withCredentials: true }
+      );
+  
       alert("Whiteboard saved successfully!");
     } catch (error) {
       console.error("Error saving whiteboard:", error);
