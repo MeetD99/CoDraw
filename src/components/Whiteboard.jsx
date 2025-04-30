@@ -1,11 +1,12 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas, PencilBrush, Textbox, Rect, Circle as Cir } from 'fabric';
-import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download, Copy } from 'lucide-react';
+import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download, Copy, CheckCircle2, Loader2 } from 'lucide-react';
 import Settings from './Settings';
 import axios from "axios";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import GroupVoiceChat from './GroupVoiceChat';
+import debounce from 'lodash.debounce';
 
 const Whiteboard = () => {
   const { boardId } = useParams();
@@ -17,6 +18,8 @@ const Whiteboard = () => {
   const navigate = useNavigate();
   const socketRef = useRef(null);
   const isUpdatingFromSocketRef = useRef(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+  const [lastSavedTime, setLastSavedTime] = useState(null);
   
 
   // Load initial whiteboard data
@@ -57,11 +60,44 @@ const Whiteboard = () => {
 
   
 
+  // Auto-save function with debounce
+  const autoSave = useCallback(
+    debounce(async (canvasData) => {
+      if (!boardId || !canvasData) return;
+
+      setAutoSaveStatus('saving');
+      try {
+        await axios.post('/api/auto-save', {
+          boardId,
+          data: canvasData
+        });
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
+        setTimeout(() => {
+          if (autoSaveStatus === 'saved') {
+            setAutoSaveStatus('idle');
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        setAutoSaveStatus('error');
+        setTimeout(() => {
+          if (autoSaveStatus === 'error') {
+            setAutoSaveStatus('idle');
+          }
+        }, 2000);
+      }
+    }, 2000),
+    [boardId]
+  );
+
+  // Modify the emitCanvasData function to include auto-save
   const emitCanvasData = () => {
     if (!isUpdatingFromSocketRef.current && canvas && socketRef.current) {
       const json = JSON.stringify(canvas.toJSON());
       socketRef.current.emit("canvas-data", { boardId, data: json });
-      console.log("Change emitted")
+      autoSave(json); // Trigger auto-save
+      console.log("Change emitted and auto-save triggered");
     }
   };
 
@@ -296,6 +332,32 @@ const Whiteboard = () => {
         </button>
 
         <div className='h-[40px] w-[2px] bg-gray-200 block'></div>
+
+        {/* Auto-save status indicator */}
+        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-[10px] font-mono text-sm">
+          {autoSaveStatus === 'saving' && (
+            <div className="flex items-center gap-2 text-gray-600">
+              <Loader2 className="animate-spin" size={16} />
+              <span>Saving...</span>
+            </div>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle2 size={16} />
+              <span>Saved</span>
+            </div>
+          )}
+          {autoSaveStatus === 'error' && (
+            <div className="flex items-center gap-2 text-red-500">
+              <span>Save failed</span>
+            </div>
+          )}
+          {autoSaveStatus === 'idle' && lastSavedTime && (
+            <div className="text-gray-500">
+              Last saved: {lastSavedTime.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
 
         <button onClick={saveWhiteboard} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Save Whiteboard'><Save size={20} /></button>
         <button onClick={exportCanvasAsImage} className='cursor-pointer bg-white hover:bg-[#8f00ff]/80 hover:text-white flex items-center gap-2 p-[10px] font-mono text-nowrap rounded-[10px] text-sm'>
