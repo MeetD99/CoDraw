@@ -180,7 +180,7 @@ const Whiteboard = () => {
   
       instructions.forEach(obj => {
         if (obj.type === 'circle') {
-          const circle = new fabric.Circle({
+          const circle = new Circle({
             left: obj.x,
             top: obj.y,
             radius: obj.radius || 30,
@@ -188,7 +188,7 @@ const Whiteboard = () => {
           });
           canvas.add(circle);
         } else if (obj.type === 'rect') {
-          const rect = new fabric.Rect({
+          const rect = new Rect({
             left: obj.x,
             top: obj.y,
             width: obj.width || 100,
@@ -196,13 +196,7 @@ const Whiteboard = () => {
             fill: obj.color || 'blue'
           });
           canvas.add(rect);
-        } else if (obj.type === 'line') {
-          const line = new fabric.Line([obj.x1, obj.y1, obj.x2, obj.y2], {
-            stroke: obj.color || 'black',
-            strokeWidth: obj.strokeWidth || 2
-          });
-          canvas.add(line);
-        }
+        } 
       });
   
       canvas.renderAll();
