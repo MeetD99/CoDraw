@@ -20,12 +20,6 @@ const Whiteboard = () => {
   const isUpdatingFromSocketRef = useRef(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState({
-    lastSaved: null,
-    isAutoSaving: false,
-    operation: null,
-    documentSize: 0
-  });
   const [cloudMetrics, setCloudMetrics] = useState({
     region: '',
     saveCount: 0,
@@ -180,15 +174,22 @@ const Whiteboard = () => {
     const previewImage = canvas.toDataURL('image/png');
 
     try {
-      await axios.post(
+      setAutoSaveStatus('saving');
+      const response = await axios.post(
         "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
         { boardId, data: whiteboardData, previewImage },
         { withCredentials: true }
       );
-      alert("Whiteboard saved successfully!");
+      
+      if (response.data.cloudMetrics) {
+        setCloudMetrics(response.data.cloudMetrics);
+      }
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
     } catch (error) {
       console.error("Error saving whiteboard:", error);
-      alert("Failed to save whiteboard");
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
     }
   };
 
@@ -300,13 +301,14 @@ const Whiteboard = () => {
     link.click();
   };
 
-  // Auto-save function using existing backend endpoint
+  // Auto-save function
   const autoSave = useCallback(
     debounce(async () => {
-      if (!canvas || cloudStatus.isAutoSaving) return;
+      if (!canvas || isAutoSaving) return;
 
       try {
-        setCloudStatus(prev => ({ ...prev, isAutoSaving: true }));
+        setIsAutoSaving(true);
+        setAutoSaveStatus('saving');
         const whiteboardData = JSON.stringify(canvas.toJSON());
         const previewImage = canvas.toDataURL('image/png');
 
@@ -316,20 +318,21 @@ const Whiteboard = () => {
           { withCredentials: true }
         );
 
-        setCloudStatus({
-          lastSaved: new Date(),
-          isAutoSaving: false,
-          operation: 'update',
-          documentSize: whiteboardData.length
-        });
-
-        console.log("Cloud auto-save successful:", response.data);
+        if (response.data.cloudMetrics) {
+          setCloudMetrics(response.data.cloudMetrics);
+        }
+        setLastSaved(new Date());
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch (error) {
-        console.error("Cloud auto-save failed:", error);
-        setCloudStatus(prev => ({ ...prev, isAutoSaving: false }));
+        console.error("Auto-save failed:", error);
+        setAutoSaveStatus('error');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } finally {
+        setIsAutoSaving(false);
       }
-    }, 180000), // 3 minutes
-    [canvas, boardId]
+    }, 30000), // Auto-save every 30 seconds
+    [canvas, boardId, isAutoSaving]
   );
 
   // Set up auto-save triggers
@@ -363,40 +366,6 @@ const Whiteboard = () => {
       autoSave.cancel(); // Cancel any pending auto-saves
     };
   }, [canvas, autoSave]);
-
-  const handleAutoSave = async () => {
-    if (!boardId || !user) return;
-
-    try {
-      setAutoSaveStatus('saving');
-      const response = await fetch(`${API_URL}/whiteboard/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
-        },
-        body: JSON.stringify({
-          boardId,
-          data: canvasData,
-          previewImage: canvasRef.current.toDataURL('image/jpeg', 0.5)
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCloudMetrics(data.cloudMetrics);
-        setAutoSaveStatus('saved');
-        setTimeout(() => setAutoSaveStatus('idle'), 2000);
-      } else {
-        setAutoSaveStatus('error');
-        setTimeout(() => setAutoSaveStatus('idle'), 2000);
-      }
-    } catch (error) {
-      console.error('Auto-save error:', error);
-      setAutoSaveStatus('error');
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
-    }
-  };
 
   return (
     <div className="relative overflow-hidden">
@@ -451,26 +420,21 @@ const Whiteboard = () => {
         <div className="cloud-status bg-white hover:bg-[#8f00ff]/10 transition-all duration-300 flex items-center gap-2 px-4 py-2 rounded-[10px] shadow-sm border border-gray-200">
           <div className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${cloudStatus.isAutoSaving ? 'bg-[#8f00ff]/80 animate-pulse' : 'bg-green-500'}`} />
+              <div className={`w-3 h-3 rounded-full ${isAutoSaving ? 'bg-[#8f00ff]/80 animate-pulse' : 'bg-green-500'}`} />
               <span className="text-sm font-mono text-gray-700">
-                {cloudStatus.isAutoSaving ? 'Auto-saving...' : 'Cloud Connected'}
+                {isAutoSaving ? 'Auto-saving...' : 'Cloud Connected'}
               </span>
             </div>
-            {cloudStatus.lastSaved && (
+            {lastSaved && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">
-                  Last saved: {new Date(cloudStatus.lastSaved).toLocaleTimeString()}
+                  Last saved: {new Date(lastSaved).toLocaleTimeString()}
                 </span>
-                {cloudStatus.operation && (
-                  <span className="text-xs text-[#8f00ff]/80 font-mono">
-                    ({cloudStatus.operation})
-                  </span>
-                )}
               </div>
             )}
-            {cloudStatus.documentSize > 0 && (
+            {cloudMetrics.dataSize > 0 && (
               <div className="text-xs text-gray-500 font-mono">
-                Size: {(cloudStatus.documentSize / 1024).toFixed(2)} KB
+                Size: {(cloudMetrics.dataSize.split(' ')[0] / 1024).toFixed(2)} KB
               </div>
             )}
           </div>
