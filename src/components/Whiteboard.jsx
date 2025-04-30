@@ -180,7 +180,7 @@ const Whiteboard = () => {
   
       instructions.forEach(obj => {
         if (obj.type === 'circle') {
-          const circle = new Circle({
+          const circle = new Cir({
             left: obj.x,
             top: obj.y,
             radius: obj.radius || 30,
