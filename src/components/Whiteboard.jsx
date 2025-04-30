@@ -164,6 +164,55 @@ const Whiteboard = () => {
     }
   };
 
+  const handleAI = async () => {
+    const prompt = window.prompt("What should I draw for you?");
+    if (!prompt) return;
+  
+    try {
+      const res = await fetch('/api/text-to-drawing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+  
+      const data = await res.json();
+      const instructions = JSON.parse(data.text); // assuming it's stringified JSON
+  
+      instructions.forEach(obj => {
+        if (obj.type === 'circle') {
+          const circle = new fabric.Circle({
+            left: obj.x,
+            top: obj.y,
+            radius: obj.radius || 30,
+            fill: obj.color || 'yellow'
+          });
+          canvas.add(circle);
+        } else if (obj.type === 'rect') {
+          const rect = new fabric.Rect({
+            left: obj.x,
+            top: obj.y,
+            width: obj.width || 100,
+            height: obj.height || 50,
+            fill: obj.color || 'blue'
+          });
+          canvas.add(rect);
+        } else if (obj.type === 'line') {
+          const line = new fabric.Line([obj.x1, obj.y1, obj.x2, obj.y2], {
+            stroke: obj.color || 'black',
+            strokeWidth: obj.strokeWidth || 2
+          });
+          canvas.add(line);
+        }
+      });
+  
+      canvas.renderAll();
+    } catch (err) {
+      console.error("AI Drawing failed:", err);
+      alert("Failed to draw from AI. Check console for error.");
+    }
+  };
+  
+
   // Keyboard shortcuts
   useEffect(() => {
     if (canvas) {
@@ -326,7 +375,28 @@ const Whiteboard = () => {
       <div className='flex'>
         <canvas id="canvas" ref={canvasRef}></canvas>
       </div>
-      
+
+      <button 
+        onClick={handleAI}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          borderRadius: '50%',
+          backgroundColor: '#111',
+          color: 'white',
+          border: 'none',
+          width: '60px',
+          height: '60px',
+          cursor: 'pointer',
+          fontSize: '1.5rem',
+          zIndex: 9999
+        }}
+        title="AI Drawing Assistant"
+      >
+        🤖
+      </button>
+
     </div>
   );
 };

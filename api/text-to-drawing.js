@@ -1,0 +1,44 @@
+export default async function handler(req, res) {
+    const { prompt } = req.body;
+  
+    const systemPrompt = `You are an assistant that converts drawing ideas into JSON instructions.
+  Given a prompt, return an array of objects with shape information.
+  
+  Each object should use one of these types: "circle", "rect", "line", or "triangle".
+  Use these keys depending on shape:
+  - circle: type, x, y, radius, color
+  - rect: type, x, y, width, height, color
+  - line: type, x1, y1, x2, y2, color
+  - triangle: type, points (an array of 3 [x,y] pairs), color
+  
+  Only return valid JSON. Do not include any explanation or markdown formatting.`;
+  
+    const userPrompt = `Prompt: ${prompt}`;
+  
+    try {
+      const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer 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`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.7
+        })
+      });
+  
+      const json = await openaiRes.json();
+      const reply = json.choices?.[0]?.message?.content || "[]";
+  
+      res.status(200).json({ text: reply });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "OpenAI request failed" });
+    }
+  }
+  
