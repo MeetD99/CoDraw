@@ -3,7 +3,7 @@ import Peer from "peerjs";
 import { io } from "socket.io-client";
 import { Mic, MicOff, Volume2, VolumeX, PhoneOff, Phone } from "lucide-react";
 
-const socket = io("https://co-draw-backend.onrender.com");
+const socket = io("https://codraw-backend-hd97.onrender.com");
 
 export default function GroupVoiceChat({ boardId }) {
   const [peerId, setPeerId] = useState("");

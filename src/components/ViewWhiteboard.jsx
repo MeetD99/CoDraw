@@ -41,7 +41,7 @@ const ViewWhiteboard = () => {
   useEffect(() => {
     if (!canvas) return;
 
-    const socket = io("https://co-draw-backend.onrender.com");
+    const socket = io("https://codraw-backend-hd97.onrender.com");
     socketRef.current = socket;
 
     socket.emit("join-board", {boardId, data: null, role: 'viewer'});
@@ -100,7 +100,7 @@ const ViewWhiteboard = () => {
 
     try {
       await axios.post(
-        "https://co-draw-backend.onrender.com/api/whiteboards/save",
+        "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
         { boardId: crypto.randomUUID(), data: whiteboardData, previewImage },
         { withCredentials: true }
       );

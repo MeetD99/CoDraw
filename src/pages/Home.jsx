@@ -12,7 +12,7 @@ const Home = () => {
     useEffect(() => {
         
         setLoading(true);
-        axios.get("https://co-draw-backend.onrender.com/api/whiteboards", {
+        axios.get("https://codraw-backend-hd97.onrender.com/api/whiteboards", {
             withCredentials: true // include the cookie
         })
         .then(res => {

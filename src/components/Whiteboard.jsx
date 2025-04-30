@@ -22,7 +22,7 @@ const Whiteboard = () => {
   // Load initial whiteboard data
   useEffect(() => {
     if (!location.state?.data) {
-      axios.get(`https://co-draw-backend.onrender.com/api/whiteboards/${boardId}`, { withCredentials: true })
+      axios.get(`https://codraw-backend-hd97.onrender.com/api/whiteboards/${boardId}`, { withCredentials: true })
         .then(res => {
           if (res.data?.data) setInitialData(res.data.data);
         })
@@ -37,7 +37,7 @@ const Whiteboard = () => {
               const previewImage = canvas.toDataURL('image/png');
 
               axios.post(
-                "https://co-draw-backend.onrender.com/api/whiteboards/save",
+                "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
                 { boardId, data: whiteboardData, previewImage },
                 { withCredentials: true }
               )
@@ -123,7 +123,7 @@ const Whiteboard = () => {
 
   useEffect(() => {
     if(!canvas) return;
-    const socket = io("https://co-draw-backend.onrender.com"); // adjust backend URL if needed
+    const socket = io("https://codraw-backend-hd97.onrender.com"); // adjust backend URL if needed
     socketRef.current = socket;
   
     const handleCanvasUpdate = ({ boardId: incomingId, data }) => {
@@ -153,7 +153,7 @@ const Whiteboard = () => {
 
     try {
       await axios.post(
-        "https://co-draw-backend.onrender.com/api/whiteboards/save",
+        "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
         { boardId, data: whiteboardData, previewImage },
         { withCredentials: true }
       );
