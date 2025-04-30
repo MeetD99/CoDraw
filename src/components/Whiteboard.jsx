@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas, PencilBrush, Textbox, Rect, Circle as Cir } from 'fabric';
-import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download, Copy, CheckCircle2, Loader2 } from 'lucide-react';
+import { Square, Circle, Type, Move, Pencil, Trash2, Save, Download, Copy } from 'lucide-react';
 import Settings from './Settings';
 import axios from "axios";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
@@ -18,8 +18,14 @@ const Whiteboard = () => {
   const navigate = useNavigate();
   const socketRef = useRef(null);
   const isUpdatingFromSocketRef = useRef(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
-  const [lastSavedTime, setLastSavedTime] = useState(null);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState({
+    lastSaved: null,
+    isAutoSaving: false,
+    operation: null,
+    documentSize: 0
+  });
   
 
   // Load initial whiteboard data
@@ -60,44 +66,11 @@ const Whiteboard = () => {
 
   
 
-  // Auto-save function with debounce
-  const autoSave = useCallback(
-    debounce(async (canvasData) => {
-      if (!boardId || !canvasData) return;
-
-      setAutoSaveStatus('saving');
-      try {
-        await axios.post('/api/auto-save', {
-          boardId,
-          data: canvasData
-        });
-        setAutoSaveStatus('saved');
-        setLastSavedTime(new Date());
-        setTimeout(() => {
-          if (autoSaveStatus === 'saved') {
-            setAutoSaveStatus('idle');
-          }
-        }, 2000);
-      } catch (error) {
-        console.error('Auto-save failed:', error);
-        setAutoSaveStatus('error');
-        setTimeout(() => {
-          if (autoSaveStatus === 'error') {
-            setAutoSaveStatus('idle');
-          }
-        }, 2000);
-      }
-    }, 2000),
-    [boardId]
-  );
-
-  // Modify the emitCanvasData function to include auto-save
   const emitCanvasData = () => {
     if (!isUpdatingFromSocketRef.current && canvas && socketRef.current) {
       const json = JSON.stringify(canvas.toJSON());
       socketRef.current.emit("canvas-data", { boardId, data: json });
-      autoSave(json); // Trigger auto-save
-      console.log("Change emitted and auto-save triggered");
+      console.log("Change emitted")
     }
   };
 
@@ -308,9 +281,73 @@ const Whiteboard = () => {
     link.click();
   };
 
+  // Auto-save function using existing backend endpoint
+  const autoSave = useCallback(
+    debounce(async () => {
+      if (!canvas || cloudStatus.isAutoSaving) return;
+
+      try {
+        setCloudStatus(prev => ({ ...prev, isAutoSaving: true }));
+        const whiteboardData = JSON.stringify(canvas.toJSON());
+        const previewImage = canvas.toDataURL('image/png');
+
+        const response = await axios.post(
+          "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
+          { boardId, data: whiteboardData, previewImage },
+          { withCredentials: true }
+        );
+
+        setCloudStatus({
+          lastSaved: new Date(),
+          isAutoSaving: false,
+          operation: 'update',
+          documentSize: whiteboardData.length
+        });
+
+        console.log("Cloud auto-save successful:", response.data);
+      } catch (error) {
+        console.error("Cloud auto-save failed:", error);
+        setCloudStatus(prev => ({ ...prev, isAutoSaving: false }));
+      }
+    }, 180000), // 3 minutes
+    [canvas, boardId]
+  );
+
+  // Set up auto-save triggers
+  useEffect(() => {
+    if (!canvas) return;
+
+    const emitOnAdd = () => {
+      if (!isUpdatingFromSocketRef.current) {
+        emitCanvasData();
+        autoSave();
+      }
+    };
+
+    const emitOnModify = () => {
+      if (!isUpdatingFromSocketRef.current) {
+        emitCanvasData();
+        autoSave();
+      }
+    };
+
+    canvas.on("object:added", emitOnAdd);
+    canvas.on("object:modified", emitOnModify);
+    canvas.on("object:removed", emitOnModify);
+    canvas.on("path:created", emitOnAdd);
+
+    return () => {
+      canvas.off("object:added", emitOnAdd);
+      canvas.off("object:modified", emitOnModify);
+      canvas.off("object:removed", emitOnModify);
+      canvas.off("path:created", emitOnAdd);
+      autoSave.cancel(); // Cancel any pending auto-saves
+    };
+  }, [canvas, autoSave]);
+
   return (
     <div className="relative overflow-hidden">
-      <div className="toolbar absolute top-[2%] z-[20] shadow-lg left-1/2 -translate-x-1/2 bg-gray-100 rounded-[10px] flex gap-5 px-3 py-3 justify-center  items-center">
+      <div className="toolbar absolute top-[2%] z-[20] shadow-lg left-1/2 -translate-x-1/2 bg-gray-100 rounded-[10px] flex gap-5 px-3 py-3 justify-center items-center">
         <button onClick={disableFreeDraw} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Move'><Move size={20} /></button>
         <button onClick={addRectangle} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Square'><Square size={20} /></button>
         <button onClick={addCircle} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Circle'><Circle size={20} /></button>
@@ -332,32 +369,6 @@ const Whiteboard = () => {
         </button>
 
         <div className='h-[40px] w-[2px] bg-gray-200 block'></div>
-
-        {/* Auto-save status indicator */}
-        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-[10px] font-mono text-sm">
-          {autoSaveStatus === 'saving' && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <Loader2 className="animate-spin" size={16} />
-              <span>Saving...</span>
-            </div>
-          )}
-          {autoSaveStatus === 'saved' && (
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle2 size={16} />
-              <span>Saved</span>
-            </div>
-          )}
-          {autoSaveStatus === 'error' && (
-            <div className="flex items-center gap-2 text-red-500">
-              <span>Save failed</span>
-            </div>
-          )}
-          {autoSaveStatus === 'idle' && lastSavedTime && (
-            <div className="text-gray-500">
-              Last saved: {lastSavedTime.toLocaleTimeString()}
-            </div>
-          )}
-        </div>
 
         <button onClick={saveWhiteboard} className='cursor-pointer hover:bg-[#8f00ff]/80 hover:text-white p-1 rounded-[5px]' title='Save Whiteboard'><Save size={20} /></button>
         <button onClick={exportCanvasAsImage} className='cursor-pointer bg-white hover:bg-[#8f00ff]/80 hover:text-white flex items-center gap-2 p-[10px] font-mono text-nowrap rounded-[10px] text-sm'>
@@ -382,6 +393,35 @@ const Whiteboard = () => {
           </div>
         </div>
         <GroupVoiceChat boardId={boardId}/>
+
+        {/* Enhanced Cloud Status Indicator */}
+        <div className="cloud-status bg-white hover:bg-[#8f00ff]/10 transition-all duration-300 flex items-center gap-2 px-4 py-2 rounded-[10px] shadow-sm border border-gray-200">
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${cloudStatus.isAutoSaving ? 'bg-[#8f00ff]/80 animate-pulse' : 'bg-green-500'}`} />
+              <span className="text-sm font-mono text-gray-700">
+                {cloudStatus.isAutoSaving ? 'Auto-saving...' : 'Cloud Connected'}
+              </span>
+            </div>
+            {cloudStatus.lastSaved && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">
+                  Last saved: {new Date(cloudStatus.lastSaved).toLocaleTimeString()}
+                </span>
+                {cloudStatus.operation && (
+                  <span className="text-xs text-[#8f00ff]/80 font-mono">
+                    ({cloudStatus.operation})
+                  </span>
+                )}
+              </div>
+            )}
+            {cloudStatus.documentSize > 0 && (
+              <div className="text-xs text-gray-500 font-mono">
+                Size: {(cloudStatus.documentSize / 1024).toFixed(2)} KB
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <Settings canvas={canvas} />
