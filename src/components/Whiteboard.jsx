@@ -17,6 +17,8 @@ const Whiteboard = () => {
   const navigate = useNavigate();
   const socketRef = useRef(null);
   const isUpdatingFromSocketRef = useRef(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
   
 
   // Load initial whiteboard data
@@ -138,6 +140,11 @@ const Whiteboard = () => {
 
     // Listen for updates
     socket.on("canvas-data", handleCanvasUpdate);
+
+    socket.on("viewer-joined", ({ boardId, socketId, timestamp }) => {
+      alert(`A viewer has joined board ${boardId}`);
+      console.log(`Viewer socket ${socketId} joined at ${timestamp}`);
+    });
     
     return () => {
       socket.off("canvas-data", handleCanvasUpdate);
@@ -175,19 +182,23 @@ const Whiteboard = () => {
     }
   };
 
-  const handleAI = async () => {
-    const prompt = window.prompt("What should I draw for you?");
-    if (!prompt) return;
+  const openAIModal = () => {
+    setAiPrompt("");
+    setShowAIModal(true);
+  };
+
+  const submitAIPrompt = async () => {
+    if (!aiPrompt) return;
   
     try {
       const res = await fetch('/api/text-to-drawing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt: aiPrompt })
       });
   
       const data = await res.json();
-      const instructions = JSON.parse(data.text); // assuming it's stringified JSON
+      const instructions = JSON.parse(data.text);
   
       instructions.forEach(obj => {
         if (obj.type === 'circle') {
@@ -207,13 +218,15 @@ const Whiteboard = () => {
             fill: obj.color || 'blue'
           });
           canvas.add(rect);
-        } 
+        }
       });
   
       canvas.renderAll();
     } catch (err) {
       console.error("AI Drawing failed:", err);
       alert("Failed to draw from AI. Check console for error.");
+    } finally {
+      setShowAIModal(false);
     }
   };
   
@@ -382,7 +395,7 @@ const Whiteboard = () => {
       </div>
 
       <button 
-        onClick={handleAI}
+        onClick={openAIModal}
         style={{
           position: 'fixed',
           bottom: '20px',
@@ -401,6 +414,36 @@ const Whiteboard = () => {
       >
         🤖
       </button>
+
+      {showAIModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
+          <div className="bg-white p-6 rounded-xl shadow-lg w-[90%] max-w-md">
+            <h2 className="text-xl font-bold mb-4">AI Drawing Prompt</h2>
+            <input
+              type="text"
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder="What should I draw for you?"
+              className="w-full border border-gray-300 rounded-md p-2 mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowAIModal(false)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitAIPrompt}
+                className="px-4 py-2 bg-[#8f00ff] text-white rounded hover:bg-[#7500d1]"
+              >
+                Draw
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );
