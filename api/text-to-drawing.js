@@ -38,8 +38,11 @@ Only return valid JSON. Do not include any explanation or markdown formatting.`;
 
     const json = await geminiRes.json();
 
-    const reply =
-      json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+    let reply = json.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+
+    // Clean markdown formatting if present
+    reply = reply.trim().replace(/^```json\s*|\s*```$/g, '');
+
 
     res.status(200).json({ text: reply });
   } catch (err) {
