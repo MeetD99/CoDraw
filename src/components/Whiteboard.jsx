@@ -138,7 +138,7 @@ const Whiteboard = () => {
 
     // Listen for updates
     socket.on("canvas-data", handleCanvasUpdate);
-  
+    
     return () => {
       socket.off("canvas-data", handleCanvasUpdate);
       socket.disconnect();
@@ -151,10 +151,33 @@ const Whiteboard = () => {
     const whiteboardData = JSON.stringify(canvas.toJSON());
     const previewImage = canvas.toDataURL('image/png');
 
+    const byteString = atob(previewImage.split(',')[1]);
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
+    }
+
+    const blob = new Blob([uint8Array], { type: 'image/png' });
+    const file = new File([blob], 'preview.png', { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('image', file);
+
     try {
+      const uploadResponse = await axios.post(
+        "https://codraw-backend-hd97.onrender.com/api/whiteboards/upload-preview",
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' }, withCredentials: true }
+      );
+  
+      // Get the Cloudinary URL from the response
+      const cloudinaryUrl = uploadResponse.data.url;
+
       await axios.post(
         "https://codraw-backend-hd97.onrender.com/api/whiteboards/save",
-        { boardId, data: whiteboardData, previewImage },
+        { boardId, data: whiteboardData, previewImage: cloudinaryUrl },
         { withCredentials: true }
       );
       alert("Whiteboard saved successfully!");
