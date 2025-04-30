@@ -33,9 +33,9 @@ export default async function handler(req, res) {
       });
   
       const json = await openaiRes.json();
-      const reply = json.choices?.[0]?.message?.content || "[]";
+    //   const reply = json.choices?.[0]?.message?.content || "[]";
   
-      res.status(200).json({ text: reply });
+      res.status(200).json({ text: json });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: "OpenAI request failed" });
