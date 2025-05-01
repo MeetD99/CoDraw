@@ -6,7 +6,6 @@ try {
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
   } catch (err) {
     console.error("Invalid FIREBASE_SERVICE_ACCOUNT_KEY:", err);
-    return res.status(500).json({ error: "Invalid Firebase credentials" });
   }
 
 const app = initializeApp({
