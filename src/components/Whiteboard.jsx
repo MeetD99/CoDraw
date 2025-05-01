@@ -143,6 +143,17 @@ const Whiteboard = () => {
 
     socket.on("viewer-joined", ({ boardId, socketId, timestamp }) => {
       alert(`A viewer has joined board ${boardId}`);
+      fetch('/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'viewer-joined',
+          boardId: boardId,
+          timestamp: new Date().toISOString()
+        })
+      }).then(res => res.json())
+      .then(data => console.log("Metric logged:", data))
+      .catch(err => console.error("Metric logging failed:", err));
       console.log(`Viewer socket ${socketId} joined at ${timestamp}`);
     });
     
@@ -174,6 +185,18 @@ const Whiteboard = () => {
         { boardId, data: whiteboardData, previewImage: cloudinaryUrl },
         { withCredentials: true }
       );
+
+      fetch('/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'Whiteboard Saved',
+          boardId: boardId,
+          timestamp: new Date().toISOString()
+        })
+      }).then(res => res.json())
+      .then(data => console.log("Metric logged:", data))
+      .catch(err => console.error("Metric logging failed:", err));
   
       alert("Whiteboard saved successfully!");
     } catch (error) {
@@ -220,6 +243,18 @@ const Whiteboard = () => {
           canvas.add(rect);
         }
       });
+
+      fetch('/api/metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'AI text-to-drawing used!',
+          boardId: boardId,
+          timestamp: new Date().toISOString()
+        })
+      }).then(res => res.json())
+      .then(data => console.log("Metric logged:", data))
+      .catch(err => console.error("Metric logging failed:", err));
   
       canvas.renderAll();
     } catch (err) {
